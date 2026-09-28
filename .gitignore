@@ -1,0 +1,11 @@
+/.pnpm-store/
+/node_modules/
+/vendor/
+/release/
+
+.env
+.env.*
+!.env.example
+*.log
+.phpunit.result.cache
+/ss

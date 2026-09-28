@@ -1,0 +1,29 @@
+{
+  "name": "techbyit/techbyit-smtp",
+  "description": "WordPress SMTP and email management plugin",
+  "license": "GPL-2.0-or-later",
+  "type": "wordpress-plugin",
+  "require": {
+    "php": ">=7.4",
+    "ext-json": "*",
+    "ext-openssl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "TechByIt\\SMTP\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/php/run.php",
+    "lint:php": "phpcs --standard=phpcs.xml.dist"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "require-dev": {
+    "wp-coding-standards/wpcs": "^3.0"
+  }
+}
