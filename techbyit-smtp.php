@@ -2,7 +2,7 @@
 /**
  * Plugin Name: TechByIt SMTP
  * Description: SMTP and email management for WordPress.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: techbyit-smtp
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('TECHBYIT_SMTP_FILE', __FILE__);
-define('TECHBYIT_SMTP_VERSION', '1.0.0');
+define('TECHBYIT_SMTP_VERSION', '1.0.1');
 
 $techbyit_smtp_autoload = __DIR__ . '/vendor/autoload.php';
 if (!file_exists($techbyit_smtp_autoload)) {

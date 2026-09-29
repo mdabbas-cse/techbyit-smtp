@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-TechByIt SMTP is a WordPress admin plugin for site owners. The current release routes ordinary `wp_mail()` calls through an active Custom SMTP provider. Logging, outcome inspection, retry, and resend are planned for later phases and are not available in version 1.0.0. The plugin never changes WordPress core. PHP 7.4 and WordPress 6.2 are the minimum targets.
+TechByIt SMTP is a WordPress admin plugin for site owners. The current release routes ordinary `wp_mail()` calls through an active Custom SMTP provider. Logging, outcome inspection, retry, and resend are planned for later phases and are not available in version 1.0.1. The plugin never changes WordPress core. PHP 7.4 and WordPress 6.2 are the minimum targets.
 
 ## Design choices
 

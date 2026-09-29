@@ -3,7 +3,7 @@ Tags: smtp, email, mailer, notifications
 Requires at least: 6.2
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -119,6 +119,10 @@ Saved secrets are not displayed again. Leaving a saved password field blank keep
 Install development dependencies with `composer install` and `pnpm install --frozen-lockfile`. Run `composer test`, `composer lint:php`, `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build` to check the project.
 
 == Changelog ==
+
+= 1.0.1 =
+
+* Updated the plugin release version to 1.0.1.
 
 = 1.0.0 =
 
