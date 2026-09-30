@@ -3,7 +3,7 @@ Tags: smtp, email, mailer, notifications
 Requires at least: 6.2
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 1.0.1
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -80,10 +80,6 @@ The React and TypeScript source is in `admin/src/`; PHP source is in `src/`. Bui
 Source code and build instructions: https://github.com/mdabbas-cse/techbyit-smtp
 
 == Changelog ==
-
-= 1.0.1 =
-
-* Updated the plugin release version to 1.0.1.
 
 = 1.0.0 =
 

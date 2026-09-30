@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+SOURCE_DIR="${BUILD_AND_CP_SOURCE_DIR:-/home/mdabbasuddin/www/smtp}"
+SVN_TRUNK="${BUILD_AND_CP_SVN_TRUNK:-/home/mdabbasuddin/Abbas Document/wp-plugin-dir/techbyit-smtp/trunk}"
+DRY_RUN=false
+
+usage() {
+    printf 'Usage: build-and-cp [--dry-run]\n' >&2
+}
+
+error() {
+    printf 'ERROR: %s\n' "$1" >&2
+    [[ -z "${2:-}" ]] || printf ' %s\n' "$2" >&2
+    exit 1
+}
+
+if [[ $# -gt 1 ]]; then
+    usage
+    exit 2
+fi
+
+if [[ $# -eq 1 ]]; then
+    if [[ "$1" == '--dry-run' ]]; then
+        DRY_RUN=true
+    else
+        usage
+        exit 2
+    fi
+fi
+
+[[ -d "$SOURCE_DIR" ]] || error 'Source directory does not exist:' "$SOURCE_DIR"
+[[ -d "$SVN_TRUNK" ]] || error 'SVN trunk does not exist:' "$SVN_TRUNK"
+[[ -f "$SOURCE_DIR/package.json" ]] || error 'Build configuration does not exist:' "$SOURCE_DIR/package.json"
+[[ -f "$SOURCE_DIR/composer.json" ]] || error 'Build configuration does not exist:' "$SOURCE_DIR/composer.json"
+
+for required_command in composer pnpm rsync; do
+    command -v "$required_command" >/dev/null 2>&1 || error "Required command is not available: $required_command"
+done
+
+printf '%s\n' \
+    '========================================' \
+    ' Build & Copy' \
+    '========================================' \
+    '' \
+    'Source:' \
+    " $SOURCE_DIR/" \
+    '' \
+    'Destination:' \
+    " $SVN_TRUNK/" \
+    '' \
+    '[1/2] Building plugin...'
+
+run_production_build() {
+    cd "$SOURCE_DIR" || return 1
+    composer install --no-dev --optimize-autoloader || return $?
+    pnpm build
+}
+
+if run_production_build; then
+    printf '%s\n' '✓ Build completed successfully.'
+else
+    build_status=$?
+    printf '%s\n' \
+        '' \
+        '========================================' \
+        ' Build failed' \
+        '========================================' \
+        '' \
+        'SVN files were NOT copied.' \
+        'Fix the build errors and run:' \
+        '' \
+        'build-and-cp' >&2
+    exit "$build_status"
+fi
+
+PRODUCTION_PATHS=(
+    'techbyit-smtp.php'
+    'readme.txt'
+    'LICENSE'
+    'composer.json'
+    'composer.lock'
+    'src'
+    'vendor'
+    'dist'
+    'licenses'
+)
+
+for production_path in "${PRODUCTION_PATHS[@]}"; do
+    [[ -e "$SOURCE_DIR/$production_path" ]] || error 'Required production path does not exist after build:' "$SOURCE_DIR/$production_path"
+done
+
+printf '%s\n' '' '[2/2] Copying production files...'
+
+RSYNC_OPTIONS=(-av --exclude='.svn/')
+if [[ "$DRY_RUN" == true ]]; then
+    RSYNC_OPTIONS+=(--dry-run)
+fi
+
+RSYNC_SOURCES=()
+for production_path in "${PRODUCTION_PATHS[@]}"; do
+    RSYNC_SOURCES+=("$SOURCE_DIR/$production_path")
+done
+
+rsync "${RSYNC_OPTIONS[@]}" "${RSYNC_SOURCES[@]}" "$SVN_TRUNK/"
+copy_status=$?
+if [[ $copy_status -ne 0 ]]; then
+    printf 'ERROR: Copy failed.\n' >&2
+    exit "$copy_status"
+fi
+
+if [[ "$DRY_RUN" == true ]]; then
+    printf '%s\n' \
+        '✓ Dry run completed. No files were copied.' \
+        '' \
+        'No SVN commands were executed.'
+    exit 0
+fi
+
+printf '%s\n' \
+    '✓ Files copied successfully.' \
+    '' \
+    '========================================' \
+    ' Completed' \
+    '========================================' \
+    '' \
+    'No SVN commands were executed.' \
+    '' \
+    'Next recommended commands:' \
+    '' \
+    'cd "/home/mdabbasuddin/Abbas Document/wp-plugin-dir/techbyit-smtp"' \
+    '' \
+    'svn status' \
+    'svn diff'
