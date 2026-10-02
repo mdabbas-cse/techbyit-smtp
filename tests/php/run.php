@@ -12,7 +12,7 @@ if (!function_exists('current_user_can')) {
     }
 }
 
-define('TECHBYIT_SMTP_VERSION', '1.0.0');
+define('TECHBYIT_SMTP_VERSION', '1.0.1');
 $controller = new BootstrapController();
 $GLOBALS['test_can_manage'] = false;
 if ($controller->can_manage()) {
@@ -22,7 +22,7 @@ $GLOBALS['test_can_manage'] = true;
 if (!$controller->can_manage()) {
     throw new RuntimeException('An administrator cannot access the bootstrap route.');
 }
-if ($controller->get_bootstrap() !== array('version' => '1.0.0')) {
+if ($controller->get_bootstrap() !== array('version' => '1.0.1')) {
     throw new RuntimeException('Bootstrap response contains unexpected feature data.');
 }
 echo "REST capability tests passed.\n";

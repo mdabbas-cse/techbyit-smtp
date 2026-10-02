@@ -3,7 +3,7 @@ Tags: smtp, email, mailer, notifications
 Requires at least: 6.2
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,6 +81,13 @@ Source code and build instructions: https://github.com/mdabbas-cse/techbyit-smtp
 
 == Changelog ==
 
+= 1.0.1 =
+
+* Expanded the public product documentation with SMTP provider examples and form-plugin compatibility guidance.
+* Added clearer installation, security, reliability, and troubleshooting information.
+* Clarified that Custom SMTP is the current sending transport and that email logs and dedicated API/OAuth transports remain planned.
+* Updated and synchronized the plugin release metadata.
+
 = 1.0.0 =
 
 * Included the Composer manifest and public source link in the release documentation.
@@ -92,3 +99,13 @@ Source code and build instructions: https://github.com/mdabbas-cse/techbyit-smtp
 * Added provider configuration forms and encrypted credential storage.
 * Added default sender settings and an admin test email form.
 * Added the plugin admin interface and a database schema for future mail logging.
+
+== Upgrade Notice ==
+
+= 1.0.1 =
+
+Documentation and release metadata update. No settings changes are required.
+
+= 1.0.0 =
+
+Plugin renamed to TechByIt SMTP. Existing settings and hooks remain compatible. Code that references the former PHP namespace or constants must be updated.
