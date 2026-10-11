@@ -3,7 +3,7 @@ Tags: smtp, wp mail smtp, email, mailer, email delivery
 Requires at least: 6.2
 Requires PHP: 7.4
 Tested up to: 6.7
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -109,6 +109,16 @@ Source code and build instructions: https://github.com/mdabbas-cse/techbyit-smtp
 
 == Changelog ==
 
+= 1.1.0 =
+
+* Added email logs. Open TechByIt SMTP → Mail Logs to search messages, filter by status, provider, and date, view message details, and delete one entry or all logs.
+* Added dashboard statistics for the last 7 or 30 days: sent and failed counts, success rate, and recent failures.
+* Added Mail Logging settings: turn logging on or off, optionally store message bodies (off by default), and choose how many days to keep logs (1–365, default 30).
+* Added a daily cleanup task that deletes logs older than the retention period. Deactivating the plugin removes the task.
+* Logs never store credentials, authorization headers, or attachment contents; only attachment file names are recorded.
+* Updated the log table schema with an error code, attachment names, and a date index. The table updates automatically.
+* Fixed the admin screens failing with "Could not load TechByIt SMTP data." on sites that use plain permalinks.
+
 = 1.0.1 =
 
 * Expanded the public product documentation with SMTP provider examples and form-plugin compatibility guidance.
@@ -127,6 +137,10 @@ Source code and build instructions: https://github.com/mdabbas-cse/techbyit-smtp
 * Kept existing site settings and integration hooks compatible.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+
+Adds email logs, dashboard statistics, and log retention settings, and fixes the admin screens on sites with plain permalinks. The log table updates automatically; no settings changes are required.
 
 = 1.0.1 =
 
