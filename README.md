@@ -1,39 +1,39 @@
-=== TechByIt SMTP - Custom SMTP Mailer & Email Sender for WordPress ===
+=== TechByIt SMTP – Custom SMTP Mailer & Email Sender for WordPress ===
 Contributors: techbyit
-Tags: smtp, email, mailer, notifications
+Tags: smtp, wp mail smtp, email, mailer, email delivery
 Requires at least: 6.2
-Tested up to: 7.1
+Tested up to: 6.7
 Requires PHP: 7.4
 Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Send WordPress email through your SMTP server, configure a default sender, and check your connection with a test email.
+Send WordPress emails through your SMTP server, set a default sender, and test your SMTP connection with a test email.
 
 == Description ==
 
-TechByIt SMTP sends WordPress site email through a configured SMTP server. It works with messages sent using WordPress's `wp_mail()` function, including notifications from plugins that use that function.
+TechByIt SMTP is a lightweight WordPress SMTP plugin that sends your site's email through a configured SMTP server. It works with any message sent using WordPress's `wp_mail()` function, including contact form submissions, WooCommerce order emails, password reset emails, and notifications from other plugins.
 
-From the TechByIt SMTP admin menu, you can configure your server, choose the active provider, set a default sender, and send a test email.
+From the TechByIt SMTP admin menu you can configure your SMTP server, choose the active provider, set a default sender, and send a test email.
 
-= Is your WordPress not sending emails, or are they going to spam? =
+= Is WordPress not sending emails, or are they going to spam? =
 
-The default PHP mail function is often blocked or filtered as spam by receiving mail systems. TechByIt SMTP lets you connect your WordPress site to a real SMTP server, so your messages are sent from an authenticated source. Using an SMTP server helps prove that your site's emails come from a trusted sender, much like presenting your ID before entering a secure building.
+The default PHP `mail()` function is often blocked or filtered as spam by receiving mail systems. TechByIt SMTP connects your WordPress site to a real SMTP server so your messages are sent from an authenticated source. Using an SMTP server helps prove your site's emails come from a trusted sender — much like presenting your ID before entering a secure building.
 
-= Features =
+= WordPress SMTP plugin features =
 
-* Custom SMTP configuration with host, port, encryption, authentication, and connection timeout settings.
-* Default From name and email address settings.
+* Custom SMTP configuration with host, port, encryption (TLS/SSL), authentication, and connection timeout settings.
+* Default From name and email address settings for consistent sender identity.
 * A test email form with success and error feedback.
-* Encrypted storage for provider passwords and keys.
+* Encrypted storage for provider passwords and API keys.
 * Settings restricted to WordPress users with permission to manage site options.
 * Quick setup: connect your SMTP server and send a test email within minutes.
 
-= Available providers =
+= Available SMTP providers =
 
 **Custom SMTP** is the only provider currently available for sending.
 
-Configuration forms are also included for Gmail, Google Workspace, Microsoft 365, Amazon SES, SendGrid, Mailgun, Brevo, and Postmark. Their sending transports and OAuth connections are not available yet.
+Configuration forms are also included for Gmail, Google Workspace, Microsoft 365, Amazon SES, SendGrid, Mailgun, Brevo, and Postmark. Their dedicated sending transports and OAuth connections are not available yet.
 
 Message logging, dashboard statistics, retry, and resend are planned features. The Mail Logs page is currently a placeholder.
 
@@ -44,7 +44,7 @@ Custom SMTP works with any service that gives you standard SMTP connection detai
 * **Mailgun:** `smtp.mailgun.org`, TLS, port 587
 * **Gmail / Google Workspace:** `smtp.gmail.com`, TLS, port 587
 * **Outlook / Microsoft 365:** `smtp-mail.outlook.com`, TLS, port 587
-* **Yahoo:** `smtp.mail.yahoo.com`, SSL, port 465
+* **Yahoo Mail:** `smtp.mail.yahoo.com`, SSL, port 465
 * **Zoho Mail:** `smtp.zoho.com`, TLS, port 587
 * **Amazon SES:** region-specific host such as `email-smtp.us-west-2.amazonaws.com`, TLS, port 587
 * **SendGrid:** `smtp.sendgrid.net`, TLS, port 587
@@ -52,7 +52,7 @@ Custom SMTP works with any service that gives you standard SMTP connection detai
 
 Always confirm the current host, port, and sender rules with your provider, as these can change. Many providers offer free plans.
 
-= Compatible with top form plugins =
+= Compatible with top WordPress form plugins =
 
 If you use forms, you want to be sure notifications are delivered every time. TechByIt SMTP routes mail sent through `wp_mail()`, so it is designed to work with form plugins such as:
 
@@ -82,7 +82,7 @@ It also works with any other plugin that relies on WordPress's `wp_mail()` to se
 
 TechByIt SMTP follows security best practices. Many providers, such as Gmail, SendGrid, or Mailgun, issue dedicated SMTP credentials or app passwords. Use those instead of typing your main account login into WordPress. Saved passwords and keys are stored encrypted and are never displayed again in the settings form.
 
-= Reliable WordPress mail for every user =
+= Reliable WordPress email delivery for every user =
 
 Don't let emails go missing or end up in spam. TechByIt SMTP gives you control over your WordPress email delivery: use any SMTP service you trust, set a default sender, and verify the connection with a test email.
 
@@ -137,15 +137,23 @@ The ZIP includes the required PHP autoloader and compiled admin assets.
 
 == Frequently Asked Questions ==
 
-= Do I need an SMTP service? =
+= How do I fix WordPress not sending emails? =
 
-Yes. To send through Custom SMTP, you need access to an SMTP server and its connection details. TechByIt SMTP does not provide an email account or SMTP service.
+Install TechByIt SMTP, configure your SMTP server under **TechByIt SMTP → Providers**, activate Custom SMTP, and send a test email. Routing WordPress email through an authenticated SMTP server is the most common fix for missing or undelivered WordPress emails.
 
-= What happens when no provider is active? =
+= Do I need an SMTP service to use this plugin? =
+
+Yes. To send through Custom SMTP, you need access to an SMTP server and its connection details. TechByIt SMTP does not provide an email account or SMTP service — it connects your WordPress site to one you already have.
+
+= Which SMTP providers work with TechByIt SMTP? =
+
+Any provider that offers standard SMTP connection details works with Custom SMTP, including Gmail, Google Workspace, Microsoft 365, Amazon SES, SendGrid, Mailgun, Brevo, and Postmark. Enter the host, port, encryption, username, and password from your provider.
+
+= What happens when no SMTP provider is active? =
 
 WordPress keeps its usual mail behavior. TechByIt SMTP starts routing mail through Custom SMTP after you configure and activate that provider.
 
-= Can I connect Gmail, Microsoft 365, or an API provider? =
+= Can I connect Gmail, Microsoft 365, or an API provider directly? =
 
 Their dedicated configuration forms can save settings, but their sending transports are not implemented. Saving OAuth client credentials does not connect an account. Use Custom SMTP with a service that supplies compatible SMTP connection details.
 
@@ -153,7 +161,7 @@ Their dedicated configuration forms can save settings, but their sending transpo
 
 TechByIt SMTP handles email sent through WordPress's `wp_mail()` function, which is used by most form plugins, including Contact Form 7, WPForms, Gravity Forms, Fluent Forms, and Bit Form. If a plugin sends mail some other way, it will not be routed through TechByIt SMTP.
 
-= Does a successful test guarantee inbox delivery? =
+= Does a successful test email guarantee inbox delivery? =
 
 No. Success means the SMTP server accepted the message. Check the recipient's inbox and spam folder to confirm where the message arrived.
 
@@ -182,13 +190,13 @@ The compiled React bundle contains React, React DOM, and Scheduler under the MIT
 * Updated and synchronized the plugin release metadata.
 
 = 1.0.0 =
-* Included the Composer manifest and public source link in the release documentation.
-* Renamed the plugin to TechByIt SMTP and updated its public slug and text domain.
-* Kept existing site settings and integration hooks compatible.
 * Added Custom SMTP sending through WordPress mail hooks.
 * Added provider configuration forms and encrypted credential storage.
 * Added default sender settings and an admin test email form.
 * Added the plugin admin interface and a database schema for future mail logging.
+* Included the Composer manifest and public source link in the release documentation.
+* Renamed the plugin to TechByIt SMTP and updated its public slug and text domain.
+* Kept existing site settings and integration hooks compatible.
 
 == Upgrade Notice ==
 
