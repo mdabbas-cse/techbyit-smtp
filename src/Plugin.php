@@ -2,6 +2,8 @@
 namespace TechByIt\SMTP;
 
 use TechByIt\SMTP\Admin\AdminPage;
+use TechByIt\SMTP\Logs\LogRepository;
+use TechByIt\SMTP\Logs\MailLogger;
 use TechByIt\SMTP\Mail\MailManager;
 use TechByIt\SMTP\Mail\PHPMailerConfigurator;
 use TechByIt\SMTP\Mail\TestMailService;
@@ -9,6 +11,7 @@ use TechByIt\SMTP\Mail\WordPressMailIntegration;
 use TechByIt\SMTP\Providers\ProviderManager;
 use TechByIt\SMTP\Providers\ProviderRegistry;
 use TechByIt\SMTP\Rest\BootstrapController;
+use TechByIt\SMTP\Rest\LogController;
 use TechByIt\SMTP\Rest\ProviderController;
 use TechByIt\SMTP\Rest\SettingsController;
 use TechByIt\SMTP\Rest\TestMailController;
@@ -31,5 +34,8 @@ final class Plugin {
 		$integration = new WordPressMailIntegration( $mail, $settings, new PHPMailerConfigurator() );
 		$integration->register();
 		( new TestMailController( new TestMailService( $mail, $integration ) ) )->register();
+		$logs = new LogRepository();
+		( new MailLogger( $logs, $settings ) )->register();
+		( new LogController( $logs, $settings ) )->register();
 	}
 }

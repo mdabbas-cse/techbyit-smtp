@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { request } from './client';
+import { endpointUrl, request } from './client';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -18,4 +18,13 @@ test('validation errors retain field messages', async () => {
   vi.stubGlobal('window', { TechByItSMTPConfig: { restUrl: 'https://example.test/wp-json/techbyit-smtp/v1/', nonce: 'nonce' } });
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: async () => ({ success: false, message: 'Invalid', errors: { host: 'Required' } }) }));
   await expect(request('providers/custom_smtp/settings')).rejects.toMatchObject({ message: 'Invalid', errors: { host: 'Required' } });
+});
+
+test('builds endpoint URLs for pretty and plain permalinks', () => {
+  expect(endpointUrl('https://example.test/wp-json/techbyit-smtp/v1/', 'logs?page=2').href)
+    .toBe('https://example.test/wp-json/techbyit-smtp/v1/logs?page=2');
+  const plain = endpointUrl('https://example.test/index.php?rest_route=/techbyit-smtp/v1/', 'logs?page=2');
+  expect(plain.pathname).toBe('/index.php');
+  expect(plain.searchParams.get('rest_route')).toBe('/techbyit-smtp/v1/logs');
+  expect(plain.searchParams.get('page')).toBe('2');
 });

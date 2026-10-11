@@ -27,6 +27,18 @@ final class ApiResponse {
 		);
 	}
 
+	public static function not_found( string $code, string $message ): \WP_REST_Response {
+		return new \WP_REST_Response(
+			array(
+				'success' => false,
+				'code'    => $code,
+				'message' => $message,
+				'errors'  => array(),
+			),
+			404
+		);
+	}
+
 	public static function server_error(): \WP_REST_Response {
 		return new \WP_REST_Response(
 			array(

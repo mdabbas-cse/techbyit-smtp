@@ -30,6 +30,7 @@ if (!file_exists($techbyit_smtp_autoload)) {
 require_once $techbyit_smtp_autoload;
 
 register_activation_hook(__FILE__, array(\TechByIt\SMTP\Database\Installer::class, 'install'));
+register_deactivation_hook(__FILE__, array(\TechByIt\SMTP\Logs\MailLogger::class, 'unschedule'));
 add_action('plugins_loaded', array(\TechByIt\SMTP\Database\Installer::class, 'maybe_install'));
 add_action('plugins_loaded', static function (): void {
     (new \TechByIt\SMTP\Plugin())->register();

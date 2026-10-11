@@ -18,13 +18,34 @@ function techbyit_post( string $path, array $body ): WP_REST_Response {
 	return rest_do_request( $request );
 }
 
-foreach ( array( 'providers', 'providers/custom_smtp', 'providers/custom_smtp/settings', 'settings' ) as $path ) {
+function techbyit_get( string $path, array $query = array() ): WP_REST_Response {
+	$request = new WP_REST_Request( 'GET', '/techbyit-smtp/v1/' . $path );
+	$request->set_query_params( $query );
+	return rest_do_request( $request );
+}
+
+function techbyit_delete( string $path ): WP_REST_Response {
+	return rest_do_request( new WP_REST_Request( 'DELETE', '/techbyit-smtp/v1/' . $path ) );
+}
+
+foreach ( array( 'providers', 'providers/custom_smtp', 'providers/custom_smtp/settings', 'settings', 'logs', 'logs/1', 'dashboard' ) as $path ) {
 	techbyit_assert( rest_do_request( '/techbyit-smtp/v1/' . $path )->get_status() === 401, 'Guest accessed ' . $path . '.' );
 }
 foreach ( array( 'providers/custom_smtp/settings', 'providers/custom_smtp/activate', 'settings', 'test-email' ) as $path ) {
 	techbyit_assert( techbyit_post( $path, array() )->get_status() === 401, 'Guest wrote ' . $path . '.' );
 }
+foreach ( array( 'logs', 'logs/1' ) as $path ) {
+	techbyit_assert( techbyit_delete( $path )->get_status() === 401, 'Guest deleted ' . $path . '.' );
+}
 wp_set_current_user( 1 );
+techbyit_assert( '2' === get_option( 'mailflow_smtp_db_version' ), 'Log schema migration did not run.' );
+global $wpdb;
+$log_table = $wpdb->prefix . 'mailflow_smtp_logs';
+foreach ( array( 'error_code', 'attachments' ) as $column ) {
+	techbyit_assert( null !== $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $log_table, $column ) ), 'Log column missing: ' . $column );
+}
+techbyit_assert( false !== wp_next_scheduled( \TechByIt\SMTP\Logs\MailLogger::PURGE_HOOK ), 'Log retention is not scheduled.' );
+techbyit_assert( techbyit_delete( 'logs' )->get_status() === 200, 'Logs could not be cleared.' );
 $catalog = rest_do_request( '/techbyit-smtp/v1/providers' );
 techbyit_assert( rest_do_request( '/flowmail-smtp/v1/providers' )->get_status() === 200, 'Previous REST compatibility route is unavailable.' );
 techbyit_assert( rest_do_request( '/mailflow-smtp/v1/providers' )->get_status() === 200, 'Legacy REST route is unavailable.' );
@@ -63,8 +84,11 @@ techbyit_assert( $general->get_data()['data']['active_provider'] === 'custom_smt
 $general_saved = techbyit_post(
 	'settings',
 	array(
-		'from_name'  => 'TechByIt SMTP',
-		'from_email' => 'sender@example.test',
+		'from_name'          => 'TechByIt SMTP',
+		'from_email'         => 'sender@example.test',
+		'logging_enabled'    => true,
+		'log_body'           => true,
+		'log_retention_days' => 30,
 	)
 );
 techbyit_assert( $general_saved->get_status() === 200 && $general_saved->get_data()['data']['from_email'] === 'sender@example.test', 'General settings save failed.' );
@@ -134,6 +158,18 @@ remove_action( 'phpmailer_init', $capture_mailer, 1000 );
 remove_action( 'mailflow_smtp_mail_failed', $capture_failure );
 echo "WordPress mail and test email integration passed.\n";
 
+$failed_logs = techbyit_get( 'logs', array( 'status' => 'failed', 'search' => 'Compatibility test' ) );
+techbyit_assert( 200 === $failed_logs->get_status() && 1 === $failed_logs->get_data()['data']['total'], 'Failed message was not logged.' );
+$failed_log = $failed_logs->get_data()['data']['items'][0];
+techbyit_assert( 'smtp_connection_failed' === $failed_log['error_code'] && array( 'to@example.test' ) === $failed_log['to'] && ! isset( $failed_log['body'] ), 'Failed log summary is wrong or exposes the body.' );
+$failed_details = techbyit_get( 'logs/' . $failed_log['id'] )->get_data()['data'];
+techbyit_assert( '<b>Hello</b>' === $failed_details['body'] && array( 'bcc@example.test' ) === $failed_details['bcc'] && array( wp_basename( $attachment ) ) === $failed_details['attachments'], 'Failed log details are incomplete.' );
+techbyit_assert( 'explicit@example.test' === $failed_details['from_email'] && 'text/html' === $failed_details['content_type'], 'Failed log sender or content type is wrong.' );
+techbyit_assert( strpos( wp_json_encode( $failed_details ), 'integration-only-secret' ) === false && strpos( wp_json_encode( $failed_details ), sys_get_temp_dir() ) === false, 'Log details leaked a credential or attachment path.' );
+techbyit_assert( 400 === techbyit_get( 'logs', array( 'status' => 'bogus' ) )->get_status(), 'Invalid log filter was accepted.' );
+techbyit_assert( 404 === techbyit_get( 'logs/999999999' )->get_status(), 'Missing log did not return 404.' );
+echo "Failed mail logging passed.\n";
+
 $sink = proc_open( 'php ' . escapeshellarg( __DIR__ . '/smtp-sink.php' ), array( 0 => array( 'pipe', 'r' ), 1 => array( 'file', '/dev/null', 'w' ), 2 => array( 'file', '/dev/null', 'w' ) ), $pipes );
 techbyit_assert( is_resource( $sink ), 'Local SMTP sink did not start.' );
 fclose( $pipes[0] );
@@ -161,6 +197,34 @@ remove_action( 'mailflow_smtp_mail_sent', $capture_success );
 remove_action( 'phpmailer_init', $capture_sender, 1000 );
 proc_close( $sink );
 echo "Local SMTP delivery and REST success passed.\n";
+
+$sent_logs = techbyit_get( 'logs', array( 'status' => 'sent', 'search' => 'local success' ) )->get_data()['data'];
+techbyit_assert( 1 === $sent_logs['total'] && 'sender@example.test' === $sent_logs['items'][0]['from_email'] && null !== $sent_logs['items'][0]['sent_at'], 'Sent message was not logged with its effective sender.' );
+$sent_details = techbyit_get( 'logs/' . $sent_logs['items'][0]['id'] )->get_data()['data'];
+techbyit_assert( '' !== $sent_details['message_id'] && 'Hello from the local SMTP sink.' === $sent_details['body'], 'Sent log details are incomplete.' );
+$today = wp_date( 'Y-m-d' );
+techbyit_assert( techbyit_get( 'logs', array( 'date_from' => $today, 'date_to' => $today ) )->get_data()['data']['total'] >= 4, 'Date filter excluded today\'s logs.' );
+techbyit_assert( 0 === techbyit_get( 'logs', array( 'date_to' => '2000-01-01' ) )->get_data()['data']['total'], 'Date filter included newer logs.' );
+$paged = techbyit_get( 'logs', array( 'per_page' => 1, 'page' => 2 ) )->get_data()['data'];
+techbyit_assert( 1 === count( $paged['items'] ) && 2 === $paged['page'] && $paged['total'] === $paged['total_pages'], 'Log pagination failed.' );
+$dashboard = techbyit_get( 'dashboard' )->get_data()['data'];
+techbyit_assert( $dashboard['last_7_days']['sent'] >= 2 && $dashboard['last_7_days']['failed'] >= 2 && $dashboard['recent_failures'] && true === $dashboard['logging_enabled'], 'Dashboard statistics are wrong.' );
+techbyit_assert( strpos( wp_json_encode( $dashboard ), 'Hello' ) === false, 'Dashboard exposed a message body.' );
+
+$repository = new \TechByIt\SMTP\Logs\LogRepository();
+$old_time   = gmdate( 'Y-m-d H:i:s', time() - 40 * DAY_IN_SECONDS );
+$old_id     = $repository->create( array( 'provider' => 'custom_smtp', 'status' => 'sent', 'subject' => 'Expired', 'recipients' => '{"to":["old@example.test"]}', 'attempt_count' => 1, 'created_at' => $old_time, 'updated_at' => $old_time ) );
+$before     = techbyit_get( 'logs' )->get_data()['data']['total'];
+do_action( \TechByIt\SMTP\Logs\MailLogger::PURGE_HOOK );
+techbyit_assert( null === $repository->find( $old_id ) && techbyit_get( 'logs' )->get_data()['data']['total'] === $before - 1, 'Retention purge removed the wrong rows.' );
+techbyit_assert( 200 === techbyit_delete( 'logs/' . $failed_log['id'] )->get_status() && 404 === techbyit_get( 'logs/' . $failed_log['id'] )->get_status(), 'Log entry could not be deleted.' );
+
+techbyit_post( 'settings', array( 'logging_enabled' => false ) );
+$before = techbyit_get( 'logs' )->get_data()['data']['total'];
+wp_mail( 'admin@example.test', 'Not logged', 'Logging disabled.' );
+techbyit_assert( techbyit_get( 'logs' )->get_data()['data']['total'] === $before, 'Disabled logging still recorded mail.' );
+techbyit_post( 'settings', array( 'logging_enabled' => true, 'log_body' => false ) );
+echo "Mail log REST, dashboard, and retention passed.\n";
 
 ( new \TechByIt\SMTP\Settings\SettingsRepository() )->set_active_provider( '' );
 $pass_through = static function ( $pre ) { return null === $pre ? true : $pre; };

@@ -9,8 +9,10 @@
     <file>src/Settings</file>
     <file>src/Support</file>
     <file>src/Rest/ApiResponse.php</file>
+    <file>src/Rest/LogController.php</file>
     <file>src/Rest/ProviderController.php</file>
     <file>src/Rest/SettingsController.php</file>
     <file>src/Rest/TestMailController.php</file>
     <file>src/Mail</file>
+    <file>src/Logs</file>
 </ruleset>

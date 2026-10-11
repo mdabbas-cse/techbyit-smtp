@@ -1,8 +1,9 @@
 import type { BootstrapData } from '../types';
+import { endpointUrl } from './client';
 
 export async function getBootstrap(config = window.TechByItSMTPConfig): Promise<BootstrapData> {
   if (!config) throw new Error('TechByIt SMTP configuration is missing.');
-  const response = await fetch(new URL('bootstrap', config.restUrl), {
+  const response = await fetch(endpointUrl(config.restUrl, 'bootstrap'), {
     credentials: 'same-origin',
     headers: { 'X-WP-Nonce': config.nonce },
   });

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getBootstrap } from './api/bootstrap';
+import { DashboardSummary } from './components/DashboardSummary';
 import { pageFromSlug, pages } from './navigation';
 import type { BootstrapData, Page } from './types';
+import { LogsPage } from './pages/LogsPage';
 import { ProvidersPage } from './pages/ProvidersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TestEmailPage } from './pages/TestEmailPage';
@@ -20,15 +22,11 @@ function useBootstrap() {
   return { data, error };
 }
 
-function Placeholder({ title, description }: { title: string; description: string }) {
-  return <div className="techbyit-smtp-card"><h2>{title}</h2><p>{description}</p><span className="techbyit-smtp-pill">Coming in a later phase</span></div>;
-}
-
 function Content({ page }: { page: Page }) {
   if (page === 'mailers') return <ProvidersPage />;
-  if (page === 'logs') return <Placeholder title="Mail Logs" description="Mail logging will be added in a later phase." />;
+  if (page === 'logs') return <LogsPage />;
   if (page === 'settings') return <SettingsPage />;
-  return <TestEmailPage />;
+  return <><DashboardSummary /><TestEmailPage /></>;
 }
 
 export function App({ slug }: { slug: string }) {

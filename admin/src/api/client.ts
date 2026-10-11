@@ -6,10 +6,25 @@ export class ApiError extends Error {
 
 interface Envelope<T> { success: boolean; data?: T; message?: string; errors?: Record<string, string> }
 
-export async function request<T>(path: string, method: 'GET' | 'POST' = 'GET', body?: Record<string, unknown>): Promise<T> {
+// rest_url() returns "…/index.php?rest_route=/ns/" on sites with plain permalinks,
+// where resolving a relative path with new URL() would drop the route.
+export function endpointUrl(restUrl: string, path: string): URL {
+  const url = new URL(restUrl);
+  const [route, query = ''] = path.split('?', 2);
+  const routeParam = url.searchParams.get('rest_route');
+  if (routeParam !== null) {
+    url.searchParams.set('rest_route', routeParam.replace(/\/?$/, '/') + route);
+  } else {
+    url.pathname = url.pathname.replace(/\/?$/, '/') + route;
+  }
+  new URLSearchParams(query).forEach((value, key) => url.searchParams.append(key, value));
+  return url;
+}
+
+export async function request<T>(path: string, method: 'GET' | 'POST' | 'DELETE' = 'GET', body?: Record<string, unknown>): Promise<T> {
   const config = window.TechByItSMTPConfig;
   if (!config) throw new ApiError('TechByIt SMTP configuration is missing.');
-  const response = await fetch(new URL(path, config.restUrl), {
+  const response = await fetch(endpointUrl(config.restUrl, path), {
     method,
     credentials: 'same-origin',
     headers: { 'X-WP-Nonce': config.nonce, ...(body ? { 'Content-Type': 'application/json' } : {}) },

@@ -2,7 +2,7 @@
 namespace TechByIt\SMTP\Database;
 
 final class Installer {
-    public const VERSION = '1';
+    public const VERSION = '2';
     public const OPTION = 'mailflow_smtp_db_version';
 
     public static function maybe_install(): void {
@@ -51,7 +51,9 @@ headers longtext NULL,
 body longtext NULL,
 content_type varchar(100) NOT NULL DEFAULT 'text/plain',
 status varchar(20) NOT NULL DEFAULT 'failed',
+error_code varchar(64) NOT NULL DEFAULT '',
 error_message text NULL,
+attachments longtext NULL,
 attempt_count int(10) unsigned NOT NULL DEFAULT 0,
 created_at datetime NOT NULL,
 updated_at datetime NOT NULL,
@@ -59,7 +61,8 @@ sent_at datetime NULL,
 PRIMARY KEY  (id),
 KEY message_id (message_id),
 KEY provider_created (provider,created_at),
-KEY status_created (status,created_at)
+KEY status_created (status,created_at),
+KEY created_at (created_at)
 ) {$charset_collate};";
     }
 }

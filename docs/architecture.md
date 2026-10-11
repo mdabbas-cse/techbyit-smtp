@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-TechByIt SMTP is a WordPress admin plugin for site owners. The current release routes ordinary `wp_mail()` calls through an active Custom SMTP provider. Logging, outcome inspection, retry, and resend are planned for later phases and are not available in version 1.0.1. The plugin never changes WordPress core. PHP 7.4 and WordPress 6.2 are the minimum targets.
+TechByIt SMTP is a WordPress admin plugin for site owners. The plugin routes ordinary `wp_mail()` calls through an active Custom SMTP provider. Phase 4 adds mail logging, log inspection, dashboard statistics, and retention. Retry and resend are planned for Phase 5. The plugin never changes WordPress core. PHP 7.4 and WordPress 6.2 are the minimum targets.
 
 ## Design choices
 
@@ -22,7 +22,7 @@ src/Admin/                     Menu registration and asset enqueue
 src/Rest/                      Controllers and permission checks
 src/Settings/                  Validated settings and encrypted secrets (Phase 2)
 src/Mail/                      Mail manager and transports (later phase)
-src/Logs/                      Log repository and retry policy (later phase)
+src/Logs/                      Log repository, mail logger, retention (Phase 4); retry policy (Phase 5)
 admin/                         React/TypeScript app, API client, state, pages
 tests/php/                      Core service tests
 admin/src/**/*.test.ts(x)        Critical frontend tests
@@ -35,11 +35,13 @@ dist/                           Built admin assets shipped with plugin
 
 `SettingsRepository` reads/writes the active provider and From identity via the Settings API or options with strict validation, and stores credentials in a separate non-autoloaded option. `CredentialCipher` uses authenticated encryption with a key derived from WordPress secret salts plus plugin context; absent crypto support is a hard configuration error. Secrets are write-only over REST, with boolean `configured` indicators returned to the UI. Existing encrypted data must not be overwritten by blank fields.
 
-Phase 3 uses `ProviderManager` to resolve the selected provider and validated private settings. A sending provider declares its transport capability; Custom SMTP implements `SmtpTransportProviderInterface`. `MailManager` returns a `TransportSelection`. `WordPressMailIntegration` observes `wp_mail`, `pre_wp_mail`, `phpmailer_init`, `wp_mail_succeeded`, and `wp_mail_failed`. WordPress continues to parse recipients, MIME headers, embeds, and attachments. `PHPMailerConfigurator` changes SMTP properties only; sender filters apply configured From values only when the message has no valid explicit From header. A `MailMessage` contains normalized addresses and allowlisted headers for hooks, and `MailResult` contains safe status data. The hooks `mailflow_smtp_before_send`, `mailflow_smtp_mail_sent`, and `mailflow_smtp_mail_failed` provide the Phase 4 logging extension points. Successful send means accepted by SMTP, not delivered to an inbox. `LogRepository` and retry policy remain future work.
+Phase 3 uses `ProviderManager` to resolve the selected provider and validated private settings. A sending provider declares its transport capability; Custom SMTP implements `SmtpTransportProviderInterface`. `MailManager` returns a `TransportSelection`. `WordPressMailIntegration` observes `wp_mail`, `pre_wp_mail`, `phpmailer_init`, `wp_mail_succeeded`, and `wp_mail_failed`. WordPress continues to parse recipients, MIME headers, embeds, and attachments. `PHPMailerConfigurator` changes SMTP properties only; sender filters apply configured From values only when the message has no valid explicit From header. A `MailMessage` contains normalized addresses and allowlisted headers for hooks, and `MailResult` contains safe status data. The hooks `mailflow_smtp_before_send`, `mailflow_smtp_mail_sent`, and `mailflow_smtp_mail_failed` provide the logging extension points. Successful send means accepted by SMTP, not delivered to an inbox.
+
+Phase 4 adds `MailLogger`, which listens to those three hooks. `mailflow_smtp_before_send` inserts a `sending` row, and the matching sent or failed hook updates that row, keyed by the `MailMessage` instance. A failure raised before sending, such as an unconfigured provider, inserts a `failed` row directly. Logging errors are caught so they cannot block delivery. Mail that WordPress sends while no provider is active is not logged. `LogRepository` owns every query. A daily `techbyit_smtp_purge_logs` cron event deletes rows older than the retention period in bounded batches; plugin deactivation clears the event. Retry policy remains future work.
 
 ## Database schema
 
-Table name is `$wpdb->prefix . 'mailflow_smtp_logs'` (`wp_mailflow_smtp_logs` for the default prefix). `dbDelta` runs on activation and on schema version change. The phase 1 schema is:
+Table name is `$wpdb->prefix . 'mailflow_smtp_logs'` (`wp_mailflow_smtp_logs` for the default prefix). `dbDelta` runs on activation and on schema version change. Schema version 2 (Phase 4) adds `error_code`, `attachments`, and a `created_at` index to the phase 1 table:
 
 | Column | Type | Purpose |
 | --- | --- | --- |
@@ -54,17 +56,19 @@ Table name is `$wpdb->prefix . 'mailflow_smtp_logs'` (`wp_mailflow_smtp_logs` fo
 | `body` | longtext | Optional body, controlled by logging setting |
 | `content_type` | varchar(100) | Plain or HTML replay type |
 | `status` | varchar(20), indexed | `sent`, `failed`, `sending` |
+| `error_code` | varchar(64) | Classified failure code, such as `smtp_connection_failed` |
 | `error_message` | text | Redacted, bounded failure summary |
+| `attachments` | longtext | JSON of attachment file names only; contents and paths are never stored |
 | `attempt_count` | int unsigned | Attempts, including first send |
 | `created_at`, `updated_at`, `sent_at` | datetime | UTC timestamps |
 
-Planned logging must exclude credentials, authorization headers, cookies, and OAuth data. The planned body capture setting defaults off; when off, retry/resend is unavailable for that log. When on, body and recipient access must be restricted to `manage_options`; retention and purge settings must bound storage. Attachments will not be persisted, so retries requiring an attachment must be disabled with a clear reason. Mail logs can contain private content; the future UI must show it only after an explicit details action.
+Logging excludes credentials, authorization headers, cookies, and OAuth data; headers are limited to the `MailMessage` allowlist. Logging settings live in `mailflow_smtp_settings`: `logging_enabled` (default on), `log_body` (default off), and `log_retention_days` (1–365, default 30). Bodies are stored only when `log_body` is on and the body is valid UTF-8 no larger than 1 MiB. When no body is stored, retry/resend will be unavailable for that log. All log routes require `manage_options`. Attachments are not persisted, so retries requiring an attachment must be disabled with a clear reason. List and dashboard responses never include bodies; the UI loads a body only after an explicit details action and shows HTML as source text.
 
 ## REST API (`techbyit-smtp/v1`)
 
 The earlier `flowmail-smtp/v1` and `mailflow-smtp/v1` REST namespaces remain registered for existing integrations. New admin requests use `techbyit-smtp/v1`. Stored `mailflow_smtp_*` options, the log table name, encryption context, and `mailflow_smtp_*` hooks remain unchanged to preserve existing data and integrations. PHP classes now use the `TechByIt\SMTP` namespace and constants use the `TECHBYIT_SMTP_` prefix; integrations referencing the former PHP names must update them.
 
-The `/bootstrap` endpoint requires `manage_options` and uses WordPress cookie authentication with `X-WP-Nonce` in the admin app. Implemented endpoints follow the same permission model. Each implemented route has an explicit permission callback and validated arguments. Responses omit secrets. Routes for OAuth, dashboard statistics, logs, retry, and resend in the table below are planned only.
+The `/bootstrap` endpoint requires `manage_options` and uses WordPress cookie authentication with `X-WP-Nonce` in the admin app. Implemented endpoints follow the same permission model. Each implemented route has an explicit permission callback and validated arguments. Responses omit secrets. Routes for OAuth, retry, and resend in the table below are planned only.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -77,9 +81,11 @@ The `/bootstrap` endpoint requires `manage_options` and uses WordPress cookie au
 | POST | `/providers/{id}/oauth/start` | Begin authorized OAuth flow |
 | GET | `/providers/{id}/oauth/callback` | State-verified callback |
 | POST | `/test-email` | Send one controlled test message through active SMTP (Phase 3) |
-| GET | `/dashboard` | Aggregate counts and recent failures |
-| GET | `/logs` | Search, status/provider/date filters, pagination |
-| GET | `/logs/{id}` | Message details, subject to retention rules |
+| GET | `/dashboard` | 7- and 30-day counts by status and five recent failures (Phase 4) |
+| GET | `/logs` | Search, status/provider/date filters, pagination (Phase 4) |
+| DELETE | `/logs` | Delete all log rows (Phase 4) |
+| GET | `/logs/{id}` | Message details, subject to retention rules (Phase 4) |
+| DELETE | `/logs/{id}` | Delete one log row (Phase 4) |
 | POST | `/logs/{id}/retry` | One failed-message attempt |
 | POST | `/logs/{id}/resend` | One deliberate repeat of a sent message |
 
@@ -93,8 +99,8 @@ WordPress menu entries mount the same scoped React app with Dashboard, Providers
 
 1. **Foundation:** installable plugin bootstrap, Composer autoload, versioned log table migration, capability-protected bootstrap REST route, four-page React admin shell, and Vite build.
 2. **Provider configuration:** provider registry and schema-driven forms, encrypted settings, From identity, and active provider selection.
-3. **Mail sending (current delivery):** Custom SMTP through WordPress PHPMailer, structured results, safe failure classification, and admin test email.
-4. **Logs and dashboard:** safe capture, repository, search/filter/detail API and UI, retention.
+3. **Mail sending:** Custom SMTP through WordPress PHPMailer, structured results, safe failure classification, and admin test email.
+4. **Logs and dashboard (current delivery):** safe capture, repository, search/filter/detail API and UI, retention.
 5. **Manual retry/resend and release:** concurrency policy, attempt accounting, confirmation UI, hardening, packaging.
 
 The current UI labels API and OAuth sending as unavailable. It does not imply those providers can deliver mail.

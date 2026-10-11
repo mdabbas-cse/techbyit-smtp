@@ -10,5 +10,5 @@ export const saveProviderSettings = (id: string, values: Record<string, string |
   request<ProviderSettings>(`${providerPath(id)}/settings`, 'POST', values);
 export const activateProvider = (id: string) => request<ProviderSettings>(`${providerPath(id)}/activate`, 'POST', {});
 export const getGeneralSettings = () => request<GeneralSettings>('settings');
-export const saveGeneralSettings = (values: Pick<GeneralSettings, 'from_name' | 'from_email'>) =>
+export const saveGeneralSettings = (values: Partial<Omit<GeneralSettings, 'active_provider'>>) =>
   request<GeneralSettings>('settings', 'POST', values);

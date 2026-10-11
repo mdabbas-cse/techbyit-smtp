@@ -35,10 +35,11 @@ foreach (array(
     \TechByIt\SMTP\Rest\ProviderController::class,
     \TechByIt\SMTP\Rest\SettingsController::class,
     \TechByIt\SMTP\Rest\TestMailController::class,
+    \TechByIt\SMTP\Rest\LogController::class,
 ) as $class) {
     (new ReflectionClass($class))->newInstanceWithoutConstructor()->register_routes();
 }
-if ($GLOBALS['test_routes']['techbyit-smtp/v1'] !== $GLOBALS['test_routes']['flowmail-smtp/v1'] || $GLOBALS['test_routes']['techbyit-smtp/v1'] !== $GLOBALS['test_routes']['mailflow-smtp/v1'] || count($GLOBALS['test_routes']['techbyit-smtp/v1']) !== 7) {
+if ($GLOBALS['test_routes']['techbyit-smtp/v1'] !== $GLOBALS['test_routes']['flowmail-smtp/v1'] || $GLOBALS['test_routes']['techbyit-smtp/v1'] !== $GLOBALS['test_routes']['mailflow-smtp/v1'] || count($GLOBALS['test_routes']['techbyit-smtp/v1']) !== 10) {
     throw new RuntimeException('New and legacy REST routes differ.');
 }
 echo "REST namespace compatibility tests passed.\n";
@@ -53,3 +54,4 @@ echo "Log schema tests passed.\n";
 
 require __DIR__ . '/phase2.php';
 require __DIR__ . '/phase3.php';
+require __DIR__ . '/phase4.php';

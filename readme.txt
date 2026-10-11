@@ -15,13 +15,16 @@ TechByIt SMTP is a lightweight WordPress SMTP plugin that routes your site's out
 
 If your WordPress emails are not sending, landing in spam, or being rejected by recipients, an SMTP plugin is the standard fix. TechByIt SMTP replaces the default PHP `mail()` function with authenticated SMTP delivery, which improves email deliverability and gives you control over how your site sends mail.
 
-From the **TechByIt SMTP** admin menu you can configure your SMTP server, choose the active provider, set a default sender name and address, and send a test email to confirm everything works.
+From the **TechByIt SMTP** admin menu you can configure your SMTP server, choose the active provider, set a default sender name and address, send a test email to confirm everything works, and review a log of the messages the plugin sends.
 
 = WordPress SMTP Plugin Features =
 
 * **Custom SMTP configuration** — host, port, encryption (TLS/SSL), authentication, and connection timeout settings.
 * **Default From name and email** — set a consistent sender for all outgoing WordPress email.
 * **Test email form** — verify your SMTP connection with success and error feedback.
+* **Email logs** — search messages, filter by status, provider, and date, and open the details of each message.
+* **Dashboard statistics** — sent and failed counts, success rate, and recent failures for the last 7 or 30 days.
+* **Log retention** — logs are deleted automatically after the period you choose. Storing message bodies is optional and off by default.
 * **Encrypted credential storage** — provider passwords and API keys are encrypted at rest.
 * **Capability-based access** — settings are restricted to WordPress users with permission to manage site options.
 * **Works with `wp_mail()`** — compatible with any plugin or theme that sends email through WordPress.
@@ -42,7 +45,7 @@ From the **TechByIt SMTP** admin menu you can configure your SMTP server, choose
 
 Configuration forms are also included for Gmail, Google Workspace, Microsoft 365, Amazon SES, SendGrid, Mailgun, Brevo, and Postmark. Their dedicated sending transports and OAuth connections are not available yet — use Custom SMTP with the same provider's SMTP credentials in the meantime.
 
-Message logging, dashboard statistics, retry, and resend are planned features. The Mail Logs page is currently a placeholder.
+Retry and resend of logged messages are planned features.
 
 == Installation ==
 
@@ -84,7 +87,11 @@ No. Success means the SMTP server accepted the message. Check the recipient's in
 
 = Can I view email logs or resend messages? =
 
-These features are not available in this version. The Mail Logs page is a placeholder.
+Yes, you can view logs. Open **TechByIt SMTP → Mail Logs** to search and filter messages sent through TechByIt SMTP and open their details. Logging is on by default and can be turned off in **TechByIt SMTP → Settings**. Retry and resend are not available yet.
+
+= What do email logs store? =
+
+The sender, recipients, subject, provider, status, a safe error summary, the server message ID, and attachment file names. Message bodies are stored only when **Store message bodies** is on, because they can contain private information such as password reset links. Attachment contents and credentials are never stored. Logs are deleted after the retention period, 30 days by default.
 
 = Why are saved passwords not shown in the form? =
 
